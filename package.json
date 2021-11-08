@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Monsieur-Nico/tinyapp/issues"
   },
-  "homepage": "https://github.com/Monsieur-Nico/tinyapp#readme"
+  "homepage": "https://github.com/Monsieur-Nico/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
