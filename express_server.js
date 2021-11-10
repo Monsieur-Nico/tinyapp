@@ -9,6 +9,18 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
+const users = { 
+  "id1": {
+    id: "id1", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "id2": {
+    id: "id2", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+};
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -74,6 +86,28 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
+});
+
+app.get("/register", (req, res) => {
+  const templateVars = {username: req.cookies["username"]};
+  res.render("register", templateVars) ;
+});
+
+app.post("/register", (req, res) => {
+  const newId = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const userObject = {
+    id: newId,
+    email: email,
+    password: password
+  };
+
+  users[newId] = userObject;
+  res.cookie("username", userObject.id);
+  res.redirect("/urls");
+
 });
 
 app.listen(PORT, () => {
