@@ -23,7 +23,7 @@
         <div class="card-body">
           <h3 class="card-title"><b>Edit</b></h3>
           <form method="post" action="/urls/<%= shortURL %>">
-            <form method="POST" action="/urls/<%= shortURL %>?_method=PUT"><label>New URL  <input type="text"
+            <form method="POST" action="/urls/<%= shortURL %>"><label>New URL  <input type="text"
               name="longURL" placeholder="<%= longURL%>" size=<%=longURL.length %></label> <input
               class="btn btn-primary" type="submit" value="Update">
             </form>
