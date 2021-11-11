@@ -91,14 +91,23 @@ app.post("/urls/:shortURL/", (req, res) => {
   res.redirect("/urls");
 });
 
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
+    const foundUser = getUserByEmail(users, req.body.email)
+    if (foundUser) {
+        res.cookie('email', foundUser.email);
+        res.redirect("/urls");
+    } else {
+        res.send('user does not exist :(');
+    }
 });
 
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
@@ -129,7 +138,7 @@ app.post("/register", (req, res) => {
     return;
   }
 
-  const user = getUserById(users, email)
+  const user = getUserByEmail(users, email)
   if (user) {
     res.status(400);
     res.send("This email is already in use.");
@@ -166,11 +175,11 @@ function validateCookie(cookieID, users) {
   return user;
 };
 
-function getUserById(users, requestEmail) {
+function getUserByEmail(users, requestEmail) {
 
   for (let user in users) {
     if (users[user].email === requestEmail) {
-      return user;
+      return users[user];
     }
   }
 };
