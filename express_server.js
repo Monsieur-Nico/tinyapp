@@ -6,18 +6,21 @@ const PORT = 8080; // default port 8080
 
 // set the view engine to ejs
 app.set('view engine', 'ejs');
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const users = { 
+/****************** Objects ******************/
+/*********************************************/
+
+const users = {
   "id1": {
-    id: "id1", 
-    email: "user@example.com", 
+    id: "id1",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "id2": {
-    id: "id2", 
-    email: "user2@example.com", 
+  "id2": {
+    id: "id2",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
 };
@@ -27,17 +30,32 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+/*********************************************/
+/*********************************************/
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = {username: req.cookies["username"], urls: urlDatabase};
+  const cookieID = req.cookies["username"];
+  let user;
+  if (cookieID) {
+    user = validateCookie(cookieID, users);
+  }
+
+  const templateVars = { user, urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username: req.cookies["username"]};
+  const cookieID = req.cookies["username"];
+  let user;
+  if (cookieID) {
+    user = validateCookie(cookieID, users);
+  }
+
+  const templateVars = { user };
   res.render("urls_new", templateVars);
 });
 
@@ -52,19 +70,14 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-function generateRandomString() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const length = characters.length;
-  let shortURL = '';
-
-  for (let i = 0; i < 6; i++) {
-    shortURL += characters.charAt(Math.floor(Math.random() * length));
-  }
-  return shortURL;
-}
-
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = {username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  const cookieID = req.cookies["username"];
+  let user;
+  if (cookieID) {
+    user = validateCookie(cookieID, users);
+  }
+
+  const templateVars = { user, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
@@ -89,8 +102,14 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = {username: req.cookies["username"]};
-  res.render("register", templateVars) ;
+  const cookieID = req.cookies["username"];
+  let user;
+  if (cookieID) {
+    user = validateCookie(cookieID, users);
+  }
+
+  const templateVars = { user };
+  res.render("register", templateVars);
 });
 
 app.post("/register", (req, res) => {
@@ -104,8 +123,21 @@ app.post("/register", (req, res) => {
     password: password
   };
 
+  if (!email || !password) {
+    res.status(400);
+    res.send("Invalid input!");
+    return;
+  }
+
+  const user = getUserById(users, email)
+  if (user) {
+    res.status(400);
+    res.send("This email is already in use.");
+    return;
+  }
+
   users[newId] = userObject;
-  res.cookie("username", userObject.id);
+  res.cookie("username", newId);
   res.redirect("/urls");
 
 });
@@ -113,3 +145,32 @@ app.post("/register", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+/****************** FUNCTIONS ******************/
+/***********************************************/
+
+function generateRandomString() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const length = characters.length;
+  let shortURL = '';
+
+  for (let i = 0; i < 6; i++) {
+    shortURL += characters.charAt(Math.floor(Math.random() * length));
+  }
+  return shortURL;
+};
+
+function validateCookie(cookieID, users) {
+  const user = users[cookieID];
+
+  return user;
+};
+
+function getUserById(users, requestEmail) {
+
+  for (let user in users) {
+    if (users[user].email === requestEmail) {
+      return user;
+    }
+  }
+};
