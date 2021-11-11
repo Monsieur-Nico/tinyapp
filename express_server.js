@@ -38,7 +38,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const cookieID = req.cookies["username"];
+  const cookieID = req.cookies["user_id"];
   let user;
   if (cookieID) {
     user = validateCookie(cookieID, users);
@@ -49,7 +49,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const cookieID = req.cookies["username"];
+  const cookieID = req.cookies["user_id"];
   let user;
   if (cookieID) {
     user = validateCookie(cookieID, users);
@@ -71,7 +71,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const cookieID = req.cookies["username"];
+  const cookieID = req.cookies["user_id"];
   let user;
   if (cookieID) {
     user = validateCookie(cookieID, users);
@@ -96,22 +96,34 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-    const foundUser = getUserByEmail(users, req.body.email)
-    if (foundUser) {
-        res.cookie('email', foundUser.email);
-        res.redirect("/urls");
-    } else {
-        res.send('user does not exist :(');
-    }
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const foundUser = getUserByEmail(users, email);
+  if (!foundUser) {
+    res.status(403);
+    res.send("User not found");
+    return;
+  }
+  
+  if (foundUser.password !== password) {
+    res.status(403);
+    res.send("Incorrect password");
+    return;
+  }
+
+  res.cookie('user_id', foundUser.id);
+  res.redirect("/urls");
+
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
-  const cookieID = req.cookies["username"];
+  const cookieID = req.cookies["user_id"];
   let user;
   if (cookieID) {
     user = validateCookie(cookieID, users);
@@ -146,7 +158,7 @@ app.post("/register", (req, res) => {
   }
 
   users[newId] = userObject;
-  res.cookie("username", newId);
+  res.cookie("user_id", newId);
   res.redirect("/urls");
 
 });
