@@ -1,9 +1,9 @@
 function validateCookie(cookieID, users) {
   const user = users[cookieID];
-  if (user) {
-    return user;
+  if (!user) {
+    return {data: null, error: "User doesn't exist"};
   }
-  return null;
+  return user;
 };
 
 function getUserByEmail(users, requestEmail) {
