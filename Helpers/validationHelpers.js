@@ -1,6 +1,9 @@
 function validateCookie(cookieID, users) {
   const user = users[cookieID];
-  return user;
+  if (user) {
+    return user;
+  }
+  return null;
 };
 
 function getUserByEmail(users, requestEmail) {

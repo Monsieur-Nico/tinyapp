@@ -7,8 +7,8 @@
  */
 
 /****************** Helpers ******************/
-const {generateRandomString} = require('./Helpers/stringGenerator');
-const {validateCookie, getUserByEmail, validateUrls} = require('./Helpers/validationHelpers');
+const { generateRandomString } = require('./Helpers/stringGenerator');
+const { validateCookie, getUserByEmail, validateUrls } = require('./Helpers/validationHelpers');
 /*********************************************/
 
 const express = require("express");
@@ -18,7 +18,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 
 /****************** Objects ******************/
-const {users, urlDatabase} = require('./Data/userData');
+const { users, urlDatabase } = require('./Data/userData');
 /*********************************************/
 
 /********* set the view engine to ejs *********/
@@ -38,10 +38,22 @@ app.get("/urls", (req, res) => {
   if (cookieID) {
     user = validateCookie(cookieID, users);
     urls = validateUrls(cookieID, urlDatabase);
+    const templateVars = { user, urls: urls };
+    res.render("urls_index", templateVars);
   }
+  res.redirect("/urls_loggedOut");
+});
 
+app.get("/urls_loggedOut", (req, res) => {
+  const cookieID = req.cookies["user_id"];
+  let user;
+  let urls;
+  if (cookieID) {
+    user = validateCookie(cookieID, users);
+    urls = validateUrls(cookieID, urlDatabase);
+  }
   const templateVars = { user, urls: urls };
-  res.render("urls_index", templateVars);
+  res.render("urls_loggedOut", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
@@ -86,18 +98,34 @@ app.get("/urls/:shortURL", (req, res) => {
   }
   if (cookieID) {
     user = validateCookie(cookieID, users);
+    const templateVars = { user, shortURL: req.params.shortURL, urls: urlDatabase };
+    res.render("urls_show", templateVars);
   }
-
-  const templateVars = { user, shortURL: req.params.shortURL, urls: urlDatabase };
-  res.render("urls_show", templateVars);
+  res.redirect("/urls_loggedOut");
 });
 
 app.post("/urls/:shortURL/", (req, res) => {
+  const cookieID = req.cookies["user_id"];
+  if (!cookieID) {
+    return res.send('Please login first!');
+  }
+  if (!validateCookie(cookieID, users)) {
+    return res.send('You don\'t have the permissions to modify this URL');
+  };
+
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const cookieID = req.cookies["user_id"];
+  if (!cookieID) {
+    return res.send('Please login first!');
+  }
+  if (!validateCookie(cookieID, users)) {
+    return res.send('You don\'t have the permissions to modify this URL');
+  };
+
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
@@ -116,7 +144,7 @@ app.post("/login", (req, res) => {
     res.send("User not found");
     return;
   }
-  
+
   if (foundUser.password !== password) {
     res.status(403);
     res.send("Incorrect password");
