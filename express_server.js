@@ -35,7 +35,7 @@ app.use(cookieSession({
 /*********************************************/
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect('/urls');
 });
 
 app.get("/urls", (req, res) => {
@@ -50,7 +50,7 @@ app.get("/urls", (req, res) => {
     urls = validateUrls(cookieID, urlDatabase);
 
     const templateVars = { user, urls: urls };
-    res.render("urls_index", templateVars);
+    return res.render("urls_index", templateVars);
   }
   res.redirect("/urls_loggedOut");
 });
@@ -78,7 +78,7 @@ app.get("/urls/new", (req, res) => {
     user = validateCookie(cookieID, users);
 
     const templateVars = { user };
-    res.render("urls_new", templateVars);
+    return res.render("urls_new", templateVars);
   }
   res.redirect("/login");
 });
@@ -122,9 +122,13 @@ app.get("/urls/:shortURL", (req, res) => {
 
   // If the user is logged in then display the URLs
   if (cookieID) {
+    if (urlDatabase[req.params.shortURL].userID !== cookieID) {
+      res.send('You don\'t have permission to access this page!');
+      return;
+    }
     user = validateCookie(cookieID, users);
     const templateVars = { user, shortURL: req.params.shortURL, urls: urlDatabase };
-    res.render("urls_show", templateVars);
+    return res.render("urls_show", templateVars);
   }
   res.redirect("/urls_loggedOut");
 });
@@ -136,9 +140,10 @@ app.post("/urls/:shortURL/", (req, res) => {
   }
 
   // Check if the user has the permissions make changes
-  if (!validateCookie(cookieID, users)) {
-    return res.send('You don\'t have the permissions to modify this URL');
-  };
+  if (urlDatabase[req.params.shortURL].userID !== cookieID) {
+    res.send('You don\'t have permission to modify this URL!');
+    return;
+  }
 
   // If the user has the permissions, modify the longURL
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
@@ -152,7 +157,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 
   // Check if the user has the permissions to delete URLs
-  if (!validateCookie(cookieID, users)) {
+  if (urlDatabase[req.params.shortURL].userID !== cookieID) {
     return res.send('You don\'t have the permissions to modify this URL');
   };
 
@@ -162,7 +167,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  res.render("login");
+  let user = null;
+  const templateVars = { user };
+  res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
@@ -198,12 +205,12 @@ app.post("/logout", (req, res) => {
   // Delete all cookies when logging out
   delete req.session.user_id;
   delete req.session.user_password;
-  res.redirect("/login");
+  return res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
   const cookieID = req.session.user_id;
-  let user;
+  let user = null;
   if (cookieID) {
     user = validateCookie(cookieID, users);
   }
@@ -250,7 +257,7 @@ app.post("/register", (req, res) => {
   users[newId] = userObject;
   req.session.user_id = newId;
   req.session.user_password = hashedPassword;
-  res.redirect("/urls");
+  return res.redirect("/urls");
 });
 
 app.listen(PORT, () => {

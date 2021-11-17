@@ -1,7 +1,7 @@
 function validateCookie(cookieID, users) {
   const user = users[cookieID];
   if (!user) {
-    return {data: null, error: "User doesn't exist"};
+    return Error("User doesn't exist");
   }
   return user;
 };
